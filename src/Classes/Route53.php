@@ -8,9 +8,6 @@ use Aws\Exception\CredentialsException;
 use Aws\Route53\Exception\Route53Exception;
 use Aws\Route53\Route53Client;
 use Exception;
-use Ipify\Exception\ConnectionError;
-use Ipify\Exception\ServiceError;
-use Ipify\Ip;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -43,21 +40,15 @@ class Route53
 
     public function get_public_ip(): string
     {
-        try {
-            $ip = Ip::get();
-        }
-        catch (ConnectionError $e) {
+        $ip = file_get_contents($_ENV['SERVICE']);
+        if (!is_string($ip)) {
             $this->logger->error('Connection Error');
-            $this->logger->error($e->getMessage());
             exit(1);
         }
-        catch (ServiceError $e) {
+
+        $ip = trim($ip);
+        if (!preg_match('`^\d+(\.\d+){3}$`', $ip)) {
             $this->logger->error('Service Error');
-            $this->logger->error($e->getMessage());
-            exit(1);
-        }
-        catch (Exception $e) {
-            $this->logger->error($e->getMessage());
             exit(1);
         }
 
